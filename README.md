@@ -1,6 +1,8 @@
 # Thib - Object Fitter
 A small Unity utility to assist in fitting objects meshes perfectly between other object meshes, along equal axis.
 
+You can find the utility under "Tools" -> "Thib" -> "Object Fitter"
+
 ## NOTE
 Keep in mind that this only aligns along equal axis and ignores rotation.
 - Object X centers/scales along the X axis of the X bounds objects
