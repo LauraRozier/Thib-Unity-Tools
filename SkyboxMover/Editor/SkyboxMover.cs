@@ -5,13 +5,12 @@ namespace ThibUnityTools.Editor
 {
     public class SkyboxMover : EditorWindow
     {
-
         #region App hooks
         [MenuItem("Tools/Thib/Skybox Mover")]
         public static void ShowWindow()
         {
             // Get existing open window or if none, make a new one:
-            var window = GetWindow(typeof(ObjectFitter));
+            var window = GetWindow(typeof(SkyboxMover));
             window.titleContent = new GUIContent("Thib - Skybox Mover");
             window.minSize = new Vector2(520, 600);
             window.Show();

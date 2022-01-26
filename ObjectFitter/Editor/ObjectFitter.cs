@@ -7,24 +7,8 @@ namespace ThibUnityTools.Editor
 {
     public class ObjectFitter : EditorWindow
     {
-        [Flags]
-        private enum FittingAxis : short
-        {
-            X = 0x01,
-            Y = 0x02,
-            Z = 0x04,
-            XY = 0x08,
-            XZ = 0x10,
-            YZ = 0x20,
-            XYZ = 0x40
-        }
-
-        private readonly static FittingAxis CXPositions = FittingAxis.X | FittingAxis.XY | FittingAxis.XZ | FittingAxis.XYZ;
-        private readonly static FittingAxis CYPositions = FittingAxis.Y | FittingAxis.XY | FittingAxis.YZ | FittingAxis.XYZ;
-        private readonly static FittingAxis CZPositions = FittingAxis.Z | FittingAxis.XZ | FittingAxis.YZ | FittingAxis.XYZ;
-
         [Serializable]
-        struct BoundingAxisRecord
+        private struct BoundingAxisRecord
         {
             public MeshFilter AxisA;
             public MeshFilter AxisB;
@@ -39,15 +23,15 @@ namespace ThibUnityTools.Editor
         [NonSerialized] private string fResultMessage = string.Empty;
         [NonSerialized] private bool fResultSuccess = true;
 
-        private FittingAxis fAxis = FittingAxis.XYZ;
+        private bool fEnableAxisX = true;
+        private bool fEnableAxisY = true;
+        private bool fEnableAxisZ = true;
         private bool fCenterObject = true;
         private bool fScaleObject = true;
         private MeshFilter fObjectToFit = null;
-        private readonly List<BoundingAxisRecord> fBoundingObjects = new List<BoundingAxisRecord>(3) {
-            new BoundingAxisRecord(),
-            new BoundingAxisRecord(),
-            new BoundingAxisRecord()
-        };
+        private BoundingAxisRecord fBoundingObjectsX = new BoundingAxisRecord();
+        private BoundingAxisRecord fBoundingObjectsY = new BoundingAxisRecord();
+        private BoundingAxisRecord fBoundingObjectsZ = new BoundingAxisRecord();
 
         #region App hooks
         [MenuItem("Tools/Thib/Object Fitter")]
@@ -60,13 +44,23 @@ namespace ThibUnityTools.Editor
             window.Show();
         }
 
-        void OnGUI()
+        private void OnGUI()
         {
             EditorGUILayout.BeginVertical();
             GUILayout.Label("Settings", EditorStyles.boldLabel);
-            fAxis = (FittingAxis)EditorGUILayout.EnumPopup("Fitting Axes", fAxis);
             fCenterObject = EditorGUILayout.Toggle("Center object", fCenterObject);
             fScaleObject = EditorGUILayout.Toggle("Scale object", fScaleObject);
+            GUILayout.Label("Enabled axis", EditorStyles.label);
+            EditorGUILayout.BeginHorizontal();
+            float origWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 20f;
+            fEnableAxisX = EditorGUILayout.Toggle("X", fEnableAxisX, GUILayout.ExpandWidth(false));
+            EditorGUILayout.Space(20f, false);
+            fEnableAxisY = EditorGUILayout.Toggle("Y", fEnableAxisY, GUILayout.ExpandWidth(false));
+            EditorGUILayout.Space(20f, false);
+            fEnableAxisZ = EditorGUILayout.Toggle("Z", fEnableAxisZ, GUILayout.ExpandWidth(false));
+            EditorGUIUtility.labelWidth = origWidth;
+            EditorGUILayout.EndHorizontal();
             EditorGUILayout.Separator();
             EditorGUILayout.EndVertical();
 
@@ -78,34 +72,26 @@ namespace ThibUnityTools.Editor
 
             EditorGUILayout.BeginVertical();
             GUILayout.Label("Bounding Objects", EditorStyles.boldLabel);
-            int i = 0;
-            BoundingAxisRecord rec;
 
-            if (fAxis == FittingAxis.X || fAxis == FittingAxis.XY || fAxis == FittingAxis.XZ || fAxis == FittingAxis.XYZ)
+            if (fEnableAxisX)
             {
                 GUILayout.Label("X-axis bounding objects", EditorStyles.label);
-                rec = fBoundingObjects[i];
-                rec.AxisA = (MeshFilter)EditorGUILayout.ObjectField(rec.AxisA, typeof(MeshFilter), true);
-                rec.AxisB = (MeshFilter)EditorGUILayout.ObjectField(rec.AxisB, typeof(MeshFilter), true);
-                fBoundingObjects[i++] = rec;
+                fBoundingObjectsX.AxisA = (MeshFilter)EditorGUILayout.ObjectField(fBoundingObjectsX.AxisA, typeof(MeshFilter), true);
+                fBoundingObjectsX.AxisB = (MeshFilter)EditorGUILayout.ObjectField(fBoundingObjectsX.AxisB, typeof(MeshFilter), true);
             }
 
-            if (fAxis == FittingAxis.Y || fAxis == FittingAxis.XY || fAxis == FittingAxis.YZ || fAxis == FittingAxis.XYZ)
+            if (fEnableAxisY)
             {
                 GUILayout.Label("Y-axis bounding objects", EditorStyles.label);
-                rec = fBoundingObjects[i];
-                rec.AxisA = (MeshFilter)EditorGUILayout.ObjectField(rec.AxisA, typeof(MeshFilter), true);
-                rec.AxisB = (MeshFilter)EditorGUILayout.ObjectField(rec.AxisB, typeof(MeshFilter), true);
-                fBoundingObjects[i++] = rec;
+                fBoundingObjectsY.AxisA = (MeshFilter)EditorGUILayout.ObjectField(fBoundingObjectsY.AxisA, typeof(MeshFilter), true);
+                fBoundingObjectsY.AxisB = (MeshFilter)EditorGUILayout.ObjectField(fBoundingObjectsY.AxisB, typeof(MeshFilter), true);
             }
 
-            if (fAxis == FittingAxis.Z || fAxis == FittingAxis.XZ || fAxis == FittingAxis.YZ || fAxis == FittingAxis.XYZ)
+            if (fEnableAxisZ)
             {
                 GUILayout.Label("Z-axis bounding objects", EditorStyles.label);
-                rec = fBoundingObjects[i];
-                rec.AxisA = (MeshFilter)EditorGUILayout.ObjectField(rec.AxisA, typeof(MeshFilter), true);
-                rec.AxisB = (MeshFilter)EditorGUILayout.ObjectField(rec.AxisB, typeof(MeshFilter), true);
-                fBoundingObjects[i++] = rec;
+                fBoundingObjectsZ.AxisA = (MeshFilter)EditorGUILayout.ObjectField(fBoundingObjectsZ.AxisA, typeof(MeshFilter), true);
+                fBoundingObjectsZ.AxisB = (MeshFilter)EditorGUILayout.ObjectField(fBoundingObjectsZ.AxisB, typeof(MeshFilter), true);
             }
 
             EditorGUILayout.Separator();
@@ -129,48 +115,25 @@ namespace ThibUnityTools.Editor
                 return;
             }
 
-            switch (fAxis)
+            if (fEnableAxisX && (fBoundingObjectsX.AxisA == null || fBoundingObjectsX.AxisB == null))
             {
-                case FittingAxis.X:
-                case FittingAxis.Y:
-                case FittingAxis.Z:
-                    {
-                        if (fBoundingObjects[0].AxisA == null || fBoundingObjects[0].AxisB == null)
-                        {
-                            fResultMessage = "Error!\nBounding object is null.";
-                            fResultSuccess = false;
-                            return;
-                        }
+                fResultMessage = "Error!\nOne of the X-bounding objects is null.";
+                fResultSuccess = false;
+                return;
+            }
+            
+            if (fEnableAxisY && (fBoundingObjectsY.AxisA == null || fBoundingObjectsY.AxisB == null))
+            {
+                fResultMessage = "Error!\nOne of the Y-bounding objects is null.";
+                fResultSuccess = false;
+                return;
+            }
 
-                        break;
-                    }
-                case FittingAxis.XY:
-                case FittingAxis.XZ:
-                case FittingAxis.YZ:
-                    {
-                        if (fBoundingObjects[0].AxisA == null || fBoundingObjects[0].AxisB == null ||
-                            fBoundingObjects[1].AxisA == null || fBoundingObjects[1].AxisB == null)
-                        {
-                            fResultMessage = "Error!\nOne of the bounding objects is null.";
-                            fResultSuccess = false;
-                            return;
-                        }
-
-                        break;
-                    }
-                case FittingAxis.XYZ:
-                    {
-                        if (fBoundingObjects[0].AxisA == null || fBoundingObjects[0].AxisB == null ||
-                            fBoundingObjects[1].AxisA == null || fBoundingObjects[1].AxisB == null ||
-                            fBoundingObjects[2].AxisA == null || fBoundingObjects[2].AxisB == null)
-                        {
-                            fResultMessage = "Error!\nOne of the bounding objects is null.";
-                            fResultSuccess = false;
-                            return;
-                        }
-
-                        break;
-                    }
+            if (fEnableAxisZ && (fBoundingObjectsZ.AxisA == null || fBoundingObjectsZ.AxisB == null))
+            {
+                fResultMessage = "Error!\nOne of the Z-bounding objects is null.";
+                fResultSuccess = false;
+                return;
             }
 
             fResultMessage = string.Empty;
@@ -182,60 +145,52 @@ namespace ThibUnityTools.Editor
         private Vector3 CalculateNewCenter()
         {
             var pos = fObjectToFit.gameObject.transform.localPosition;
-            int i = 0;
-            BoundingAxisRecord rec;
             float adjustedAPos;
             float adjustedBPos;
 
-            if (CXPositions.HasFlag(fAxis))
+            if (fEnableAxisX)
             {
-                rec = fBoundingObjects[i++];
-
-                if (rec.AxisA.transform.localPosition.x > rec.AxisB.transform.localPosition.x)
+                if (fBoundingObjectsX.AxisA.transform.localPosition.x > fBoundingObjectsX.AxisB.transform.localPosition.x)
                 {
-                    adjustedAPos = GetAdjustedPosX(rec.AxisA, true);
-                    adjustedBPos = GetAdjustedPosX(rec.AxisB, false);
+                    adjustedAPos = GetAdjustedPosX(fBoundingObjectsX.AxisA, true);
+                    adjustedBPos = GetAdjustedPosX(fBoundingObjectsX.AxisB, false);
                 }
                 else
                 {
-                    adjustedAPos = GetAdjustedPosX(rec.AxisA, false);
-                    adjustedBPos = GetAdjustedPosX(rec.AxisB, true);
+                    adjustedAPos = GetAdjustedPosX(fBoundingObjectsX.AxisA, false);
+                    adjustedBPos = GetAdjustedPosX(fBoundingObjectsX.AxisB, true);
                 }
 
                 pos.x = adjustedAPos + (adjustedBPos - adjustedAPos) / 2;
             }
 
-            if (CYPositions.HasFlag(fAxis))
+            if (fEnableAxisY)
             {
-                rec = fBoundingObjects[i++];
-
-                if (rec.AxisA.transform.localPosition.x > rec.AxisB.transform.localPosition.x)
+                if (fBoundingObjectsY.AxisA.transform.localPosition.x > fBoundingObjectsY.AxisB.transform.localPosition.x)
                 {
-                    adjustedAPos = GetAdjustedPosY(rec.AxisA, true);
-                    adjustedBPos = GetAdjustedPosY(rec.AxisB, false);
+                    adjustedAPos = GetAdjustedPosY(fBoundingObjectsY.AxisA, true);
+                    adjustedBPos = GetAdjustedPosY(fBoundingObjectsY.AxisB, false);
                 }
                 else
                 {
-                    adjustedAPos = GetAdjustedPosY(rec.AxisA, false);
-                    adjustedBPos = GetAdjustedPosY(rec.AxisB, true);
+                    adjustedAPos = GetAdjustedPosY(fBoundingObjectsY.AxisA, false);
+                    adjustedBPos = GetAdjustedPosY(fBoundingObjectsY.AxisB, true);
                 }
 
                 pos.y = adjustedAPos + (adjustedBPos - adjustedAPos) / 2;
             }
 
-            if (CZPositions.HasFlag(fAxis))
+            if (fEnableAxisZ)
             {
-                rec = fBoundingObjects[i++];
-
-                if (rec.AxisA.transform.localPosition.x > rec.AxisB.transform.localPosition.x)
+                if (fBoundingObjectsZ.AxisA.transform.localPosition.x > fBoundingObjectsZ.AxisB.transform.localPosition.x)
                 {
-                    adjustedAPos = GetAdjustedPosZ(rec.AxisA, true);
-                    adjustedBPos = GetAdjustedPosZ(rec.AxisB, false);
+                    adjustedAPos = GetAdjustedPosZ(fBoundingObjectsZ.AxisA, true);
+                    adjustedBPos = GetAdjustedPosZ(fBoundingObjectsZ.AxisB, false);
                 }
                 else
                 {
-                    adjustedAPos = GetAdjustedPosZ(rec.AxisA, false);
-                    adjustedBPos = GetAdjustedPosZ(rec.AxisB, true);
+                    adjustedAPos = GetAdjustedPosZ(fBoundingObjectsZ.AxisA, false);
+                    adjustedBPos = GetAdjustedPosZ(fBoundingObjectsZ.AxisB, true);
                 }
 
                 pos.z = adjustedAPos + (adjustedBPos - adjustedAPos) / 2;
@@ -248,63 +203,55 @@ namespace ThibUnityTools.Editor
         {
             Vector3 scale = fObjectToFit.gameObject.transform.localScale;
             Bounds objBounds = fObjectToFit.sharedMesh.bounds;
-            int i = 0;
-            BoundingAxisRecord rec;
             float adjustedAPos;
             float adjustedBPos;
             float gap;
 
-            if (CXPositions.HasFlag(fAxis))
+            if (fEnableAxisX)
             {
-                rec = fBoundingObjects[i++];
-
-                if (rec.AxisA.transform.localPosition.x > rec.AxisB.transform.localPosition.x)
+                if (fBoundingObjectsX.AxisA.transform.localPosition.x > fBoundingObjectsX.AxisB.transform.localPosition.x)
                 {
-                    adjustedAPos = GetAdjustedPosX(rec.AxisA, true);
-                    adjustedBPos = GetAdjustedPosX(rec.AxisB, false);
+                    adjustedAPos = GetAdjustedPosX(fBoundingObjectsX.AxisA, true);
+                    adjustedBPos = GetAdjustedPosX(fBoundingObjectsX.AxisB, false);
                 }
                 else
                 {
-                    adjustedAPos = GetAdjustedPosX(rec.AxisA, false);
-                    adjustedBPos = GetAdjustedPosX(rec.AxisB, true);
+                    adjustedAPos = GetAdjustedPosX(fBoundingObjectsX.AxisA, false);
+                    adjustedBPos = GetAdjustedPosX(fBoundingObjectsX.AxisB, true);
                 }
 
                 gap = Math.Abs(adjustedAPos - adjustedBPos);
                 scale.x = 1.0f * (gap / objBounds.size.x);
             }
 
-            if (CYPositions.HasFlag(fAxis))
+            if (fEnableAxisY)
             {
-                rec = fBoundingObjects[i++];
-
-                if (rec.AxisA.transform.localPosition.y > rec.AxisB.transform.localPosition.y)
+                if (fBoundingObjectsY.AxisA.transform.localPosition.y > fBoundingObjectsY.AxisB.transform.localPosition.y)
                 {
-                    adjustedAPos = GetAdjustedPosY(rec.AxisA, true);
-                    adjustedBPos = GetAdjustedPosY(rec.AxisB, false);
+                    adjustedAPos = GetAdjustedPosY(fBoundingObjectsY.AxisA, true);
+                    adjustedBPos = GetAdjustedPosY(fBoundingObjectsY.AxisB, false);
                 }
                 else
                 {
-                    adjustedAPos = GetAdjustedPosY(rec.AxisA, false);
-                    adjustedBPos = GetAdjustedPosY(rec.AxisB, true);
+                    adjustedAPos = GetAdjustedPosY(fBoundingObjectsY.AxisA, false);
+                    adjustedBPos = GetAdjustedPosY(fBoundingObjectsY.AxisB, true);
                 }
 
                 gap = Math.Abs(adjustedAPos - adjustedBPos);
                 scale.y = 1.0f * (gap / objBounds.size.y);
             }
 
-            if (CZPositions.HasFlag(fAxis))
+            if (fEnableAxisZ)
             {
-                rec = fBoundingObjects[i++];
-
-                if (rec.AxisA.transform.localPosition.z > rec.AxisB.transform.localPosition.z)
+                if (fBoundingObjectsZ.AxisA.transform.localPosition.z > fBoundingObjectsZ.AxisB.transform.localPosition.z)
                 {
-                    adjustedAPos = GetAdjustedPosZ(rec.AxisA, true);
-                    adjustedBPos = GetAdjustedPosZ(rec.AxisB, false);
+                    adjustedAPos = GetAdjustedPosZ(fBoundingObjectsZ.AxisA, true);
+                    adjustedBPos = GetAdjustedPosZ(fBoundingObjectsZ.AxisB, false);
                 }
                 else
                 {
-                    adjustedAPos = GetAdjustedPosZ(rec.AxisA, false);
-                    adjustedBPos = GetAdjustedPosZ(rec.AxisB, true);
+                    adjustedAPos = GetAdjustedPosZ(fBoundingObjectsZ.AxisA, false);
+                    adjustedBPos = GetAdjustedPosZ(fBoundingObjectsZ.AxisB, true);
                 }
 
                 gap = Math.Abs(adjustedAPos - adjustedBPos);
