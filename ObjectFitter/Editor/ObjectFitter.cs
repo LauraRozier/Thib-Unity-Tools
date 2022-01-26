@@ -1,9 +1,9 @@
-﻿using UnityEditor;
-using UnityEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 
-namespace ThibObjectFitter.Editor
+namespace ThibUnityTools.Editor
 {
     public class ObjectFitter : EditorWindow
     {

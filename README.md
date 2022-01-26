@@ -1,12 +1,12 @@
-# Thib - Object Fitter
+# Thib-Unity-Tools
+
+Tools for Unity by thibmo (ThibmoRozier).  
+They all fall under the same license, feel free to only use those you actually need, though. If anything is broken or missing, feel free to request it in an [issue](https://github.com/thibmo/Thib-Unity-Tools/issues/new) and mark it with the *enhancement* label.
+
+## Tool list:
+
+[Object Fitter](https://github.com/thibmo/Thib-Unity-Tools/tree/main/ObjectFitter/)
 A small Unity utility to assist in fitting objects meshes perfectly between other object meshes, along equal axis.
 
-You can find the utility under "Tools" -> "Thib" -> "Object Fitter"
-
-## NOTE
-Keep in mind that this only aligns along equal axis and ignores rotation.
-- Object X centers/scales along the X axis of the X bounds objects
-- Object Y centers/scales along the Y axis of the Y bounds objects
-- Object Z centers/scales along the Z axis of the Z bounds objects
-
-If you want to apply rotation you should do this afterwards. I might implement rotation support at a later point in time, we'll see. :)
+[Skybox Mover](https://github.com/thibmo/Thib-Unity-Tools/tree/main/SkyboxMover/)
+A small Unity utility to assist in moving the skybox to your liking.
